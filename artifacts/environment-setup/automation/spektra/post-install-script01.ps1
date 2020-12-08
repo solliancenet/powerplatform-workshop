@@ -178,6 +178,80 @@ function InstallNotepadPP()
 	}
 }
 
+function InstallVisualStudio($edition)
+{
+    write-host "Installing Visual Studio";
+
+    # Install Chocolatey
+    if (!(Get-Command choco.exe -ErrorAction SilentlyContinue)) {
+        Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))}
+        
+        # Install Visual Studio 2019 Community version
+        #choco install visualstudio2019community -y
+
+        # Install Visual Studio 2019 Enterprise version
+        choco install visualstudio2019enterprise -y --ignoredetectedreboot
+}
+
+function UpdateVisualStudio($edition)
+{
+    mkdir c:\temp -ea silentlycontinue
+    cd c:\temp
+    
+    Write-Host "Update Visual Studio." -ForegroundColor Yellow
+
+    $Edition = 'Enterprise';
+    $Channel = 'Release';
+    $channelUri = "https://aka.ms/vs/16/release";
+    $responseFileName = "vs";
+ 
+    $intermedateDir = "c:\temp";
+    $bootstrapper = "$intermedateDir\vs_$edition.exe"
+    #$responseFile = "$PSScriptRoot\$responseFileName.json"
+    #$channelId = (Get-Content $responseFile | ConvertFrom-Json).channelId
+    
+    $bootstrapperUri = "$channelUri/vs_$($Edition.ToLowerInvariant()).exe"
+    Write-Host "Downloading Visual Studio 2019 $Edition ($Channel) bootstrapper from $bootstrapperUri"
+
+    $WebClient = New-Object System.Net.WebClient
+    $WebClient.DownloadFile($bootstrapperUri,$bootstrapper)
+
+    #& $bootstrapper update --quiet
+
+    Start-Process $bootstrapper -Wait -ArgumentList 'update --quiet'
+
+    #update visual studio installer
+    #& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" update --quiet
+
+    #update visual studio
+    #& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" update  --quiet --norestart --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise'
+
+    #& $bootstrapper update  --quiet --norestart --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise'
+
+    Start-Process $bootstrapper -Wait -ArgumentList "update --quiet --norestart --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise'"
+}
+
+function AddVisualStudioWorkload($edition, $workloadName, $isPreview)
+{
+    mkdir c:\temp -ea silentlycontinue
+    cd c:\temp
+    
+    Write-Host "Adding Visual Studio workload [$workloadName]."
+
+    if ($isPreview)
+    {
+        $bootstrapper = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer";
+        $installPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview"
+        Start-Process $bootstrapper -Wait -ArgumentList "modify --add $workloadName --passive --quiet --norestart --installPath `"$installPath`""   
+    }
+    else
+    {
+      $intermedateDir = "c:\temp";
+      $bootstrapper = "$intermedateDir\vs_$edition.exe"
+      Start-Process $bootstrapper -Wait -ArgumentList "--add $workloadName --passive --quiet --norestart"
+    }
+}
+
 #Disable-InternetExplorerESC
 function DisableInternetExplorerESC
 {
@@ -266,6 +340,16 @@ InstallFiddler;
 InstallPostman;
 
 InstallAzureCli;
+
+InstallVisualStudio "enterprise"
+
+UpdateVisualStudio "enterprise"
+
+AddVisualStudioWorkload $vsVersion "Microsoft.VisualStudio.Workload.Azure" $true;
+AddVisualStudioWorkload $vsVersion "Microsoft.VisualStudio.Workload.NetCoreTools" $true;
+AddVisualStudioWorkload $vsVersion "Microsoft.VisualStudio.Workload.NetWeb" $true;
+AddVisualStudioWorkload $vsVersion "Component.GitHub.VisualStudio" $true;
+AddVisualStudioWorkload $vsVersion "Microsoft.VisualStudio.Component.Git" $true;
 
 CreateLabFilesDirectory
 
