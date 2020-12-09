@@ -33,11 +33,15 @@ $WebClient.DownloadFile("https://raw.githubusercontent.com/solliancenet/common-w
 . C:\LabFiles\Common.ps1
 . C:\LabFiles\HttpHelper.ps1
 
+InitSetup
+
 Set-Executionpolicy unrestricted -force
 
 DisableInternetExplorerESC
 
 EnableIEFileDownload
+
+InstallChocolaty;
 
 InstallAzPowerShellModule
 
@@ -49,8 +53,6 @@ InstallVisualStudioCode $ext
 InstallDotNetCore "3.1"
 
 InstallGit;
-
-InstallChocolaty
 
 InstallFiddler;
 
